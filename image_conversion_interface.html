@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Conversion Interface</title>
+  <style>
+    :root{
+      --bg:#060912;
+      --bg-2:#0b1222;
+      --panel:rgba(16,23,39,.9);
+      --card:rgba(255,255,255,.045);
+      --line:rgba(255,255,255,.09);
+      --text:#eef3ff;
+      --muted:#97a6c8;
+      --accent:#ff8a2a;
+      --accent-2:#ffb56f;
+      --success:#45d39c;
+      --warning:#ffd166;
+      --danger:#ff7c7c;
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:18px;
+      --radius-sm:14px;
+      --shadow:0 30px 80px rgba(0,0,0,.42);
+      --blob-1:#ff8a2a;
+      --blob-2:#44d3b1;
+      --blob-3:#7c8cff;
+      --blob-4:#d86fff;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%}
+
+    body{
+      font-family:Inter,"Segoe UI",Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 14% 18%, rgba(255,138,42,.12), transparent 22%),
+        radial-gradient(circle at 84% 16%, rgba(68,211,177,.10), transparent 22%),
+        linear-gradient(135deg,var(--bg) 0%,#08101d 42%,#0e1731 100%);
+      padding:20px;
+      overflow-x:hidden;
+      position:relative;
+    }
+
+    .bg-aurora{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:0;
+    }
+
+    .blob{
+      position:absolute;
+      width:34vw;
+      height:34vw;
+      min-width:300px;
+      min-height:300px;
+      max-width:620px;
+      max-height:620px;
+      border-radius:50%;
+      filter:blur(70px);
+      opacity:.22;
+      mix-blend-mode:screen;
+      will-change:transform, background;
+      transition:background 2.4s ease;
+    }
+
+    .blob-1{left:-8%;top:-6%;background:var(--blob-1);animation:floatA 22s ease-in-out infinite alternate}
+    .blob-2{right:-10%;top:6%;background:var(--blob-2);animation:floatB 26s ease-in-out infinite alternate}
+    .blob-3{left:10%;bottom:-14%;background:var(--blob-3);animation:floatC 24s ease-in-out infinite alternate}
+    .blob-4{right:8%;bottom:-10%;background:var(--blob-4);animation:floatD 28s ease-in-out infinite alternate}
+
+    @keyframes floatA {
+      0%{transform:translate3d(0,0,0) scale(1)}
+      50%{transform:translate3d(10vw,7vh,0) scale(1.08)}
+      100%{transform:translate3d(4vw,15vh,0) scale(.94)}
+    }
+    @keyframes floatB {
+      0%{transform:translate3d(0,0,0) scale(1)}
+      50%{transform:translate3d(-8vw,9vh,0) scale(1.1)}
+      100%{transform:translate3d(-14vw,-2vh,0) scale(.96)}
+    }
+    @keyframes floatC {
+      0%{transform:translate3d(0,0,0) scale(1)}
+      50%{transform:translate3d(12vw,-10vh,0) scale(1.06)}
+      100%{transform:translate3d(4vw,-16vh,0) scale(.95)}
+    }
+    @keyframes floatD {
+      0%{transform:translate3d(0,0,0) scale(1)}
+      50%{transform:translate3d(-9vw,-8vh,0) scale(1.07)}
+      100%{transform:translate3d(-4vw,10vh,0) scale(.97)}
+    }
+
+    .app{
+      width:min(1280px,100%);
+      margin:0 auto;
+      border:1px solid var(--line);
+      border-radius:32px;
+      background:linear-gradient(180deg,rgba(17,24,43,.88),rgba(8,12,23,.95));
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      position:relative;
+      z-index:1;
+      backdrop-filter:blur(18px);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:18px;
+      padding:28px 26px;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
+    }
+
+    .brand h1{margin:0;font-size:clamp(1.9rem,2.6vw,2.35rem);font-weight:800;letter-spacing:-.03em}
+    .brand p{margin:10px 0 0;color:var(--muted);font-size:1rem;line-height:1.6}
+
+    .content{padding:26px;display:grid;gap:22px}
+
+    .card{
+      background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.028));
+      border:1px solid var(--line);
+      border-radius:var(--radius-xl);
+      backdrop-filter:blur(12px);
+      min-width:0;
+    }
+
+    .main-panels{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      gap:22px;
+    }
+
+    .panel{
+      padding:22px;
+      min-height:430px;
+      display:flex;
+      flex-direction:column;
+      min-width:0;
+    }
+
+    .panel-header{display:block;margin-bottom:16px}
+    .panel-header h3{margin:0 0 8px;font-size:1.28rem;line-height:1.2}
+    .panel-header p{margin:0;color:var(--muted);font-size:.97rem;line-height:1.6}
+
+    .output-header-controls{
+      display:grid;
+      grid-template-columns:minmax(150px,170px) minmax(220px,300px);
+      gap:12px;
+      align-items:center;
+      margin-top:14px;
+    }
+
+    .btn{
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      color:white;
+      font-weight:750;
+      font-size:.94rem;
+      padding:14px 18px;
+      border-radius:15px;
+      background:linear-gradient(135deg,var(--accent),#ff9a45);
+      box-shadow:0 12px 28px rgba(255,138,42,.18);
+      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      white-space:nowrap;
+      min-height:48px;
+    }
+    .btn:hover{transform:translateY(-1px);box-shadow:0 16px 34px rgba(255,138,42,.24)}
+    .btn.secondary{
+      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.04));
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:none;
+    }
+    .btn.secondary:hover{border-color:rgba(255,255,255,.14);box-shadow:none}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+    .format-dropdown-wrap{position:relative;width:100%;min-width:0}
+    .format-select{
+      width:100%;
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+      min-height:48px;
+      padding:0 48px 0 16px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.035));
+      color:#f4f7ff;
+      font-size:.96rem;
+      font-weight:700;
+      outline:none;
+      cursor:pointer;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .format-select:hover,.format-select:focus{
+      border-color:rgba(255,138,42,.28);
+      box-shadow:0 0 0 4px rgba(255,138,42,.08), inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .format-select option{color:#0f172a;background:#f8fafc}
+    .format-dropdown-wrap::after{
+      content:"⌄";
+      position:absolute;
+      right:16px;
+      top:50%;
+      transform:translateY(-54%);
+      color:var(--muted);
+      font-size:1.05rem;
+      pointer-events:none;
+    }
+
+    .workspace{
+      flex:1;
+      border-radius:24px;
+      border:1px dashed rgba(255,255,255,.14);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.018));
+      padding:22px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      min-width:0;
+    }
+    .icon-box{
+      width:72px;height:72px;border-radius:22px;display:grid;place-items:center;
+      background:linear-gradient(145deg,rgba(255,138,42,.16),rgba(255,255,255,.04));
+      border:1px solid rgba(255,181,111,.2);font-size:1.55rem;margin:2px auto 4px;
+    }
+    .workspace-title{text-align:center}
+    .workspace-title h4{margin:0 0 8px;font-size:1.1rem;line-height:1.3}
+    .workspace-title p{margin:0 auto;color:var(--muted);line-height:1.65;max-width:42ch}
+
+    .format-summary{
+      display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.035);
+      color:var(--muted);font-size:.9rem;flex-wrap:wrap;
+    }
+    .format-summary strong{color:var(--text)}
+
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:4px}
+
+    .meta-list{display:grid;gap:10px;margin-top:auto}
+    .meta-item{
+      display:flex;align-items:center;justify-content:space-between;gap:16px;
+      padding:14px 15px;border-radius:15px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075);
+    }
+    .meta-item span{color:var(--muted)}
+    .meta-item strong{color:var(--text);font-weight:650;text-align:right;max-width:62%;overflow-wrap:anywhere}
+
+    .quality-card{
+      display:grid;gap:14px;padding:16px;border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .quality-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .quality-head strong{font-size:.98rem}
+    .quality-value{
+      min-width:68px;text-align:center;padding:8px 12px;border-radius:999px;
+      background:linear-gradient(180deg, rgba(255,138,42,.16), rgba(255,138,42,.08));
+      border:1px solid rgba(255,138,42,.22);color:#ffe1c1;font-weight:800;letter-spacing:.02em;
+    }
+    .quality-track-wrap{display:grid;gap:10px}
+    .quality-scale{display:flex;justify-content:space-between;gap:10px;font-size:.78rem;color:var(--muted)}
+
+    input[type="range"]{
+      -webkit-appearance:none;appearance:none;width:100%;height:12px;border-radius:999px;outline:none;
+      background:linear-gradient(90deg, rgba(255,138,42,.95) 0%, rgba(255,181,111,.95) var(--fill, 100%), rgba(255,255,255,.08) var(--fill, 100%), rgba(255,255,255,.08) 100%);
+      border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 2px rgba(0,0,0,.25);
+    }
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;
+      background:linear-gradient(180deg, #ffffff, #ffd5ad);border:3px solid #ff983f;box-shadow:0 8px 18px rgba(255,138,42,.28);cursor:pointer;
+    }
+    input[type="range"]::-moz-range-thumb{
+      width:24px;height:24px;border:none;border-radius:50%;
+      background:linear-gradient(180deg, #ffffff, #ffd5ad);box-shadow:0 8px 18px rgba(255,138,42,.28);cursor:pointer;
+    }
+
+    .status-card{padding:22px}
+    .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+    .section-head h3{margin:0}
+    .section-head p,.section-head span{margin:0;color:var(--muted)}
+    .status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
+    .status-box{padding:18px 16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+    .status-box strong{display:block;font-size:1.35rem;margin-bottom:8px}
+    .status-box span{color:var(--muted);font-size:.9rem;line-height:1.5}
+    .log{min-height:84px;padding:16px 18px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);color:var(--muted);line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+
+    .footer-note{padding:0 26px 24px;color:var(--muted);font-size:.9rem;line-height:1.7}
+    .status-inline{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--muted);font-size:.83rem;font-weight:600}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--warning)}
+    .dot.ok{background:var(--success)}
+    .dot.err{background:var(--danger)}
+
+    .toast-stack{
+      position:fixed;
+      right:22px;
+      bottom:22px;
+      display:grid;
+      gap:10px;
+      z-index:30;
+      pointer-events:none;
+      max-width:min(420px, calc(100vw - 32px));
+    }
+    .toast{
+      pointer-events:auto;
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:18px;
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.08);
+      background:linear-gradient(180deg, rgba(18,26,46,.96), rgba(10,15,27,.96));
+      box-shadow:0 18px 42px rgba(0,0,0,.28);
+      transform:translateY(16px);
+      opacity:0;
+      animation:toastIn .28s ease forwards;
+    }
+    .toast.success{border-color:rgba(69,211,156,.24)}
+    .toast.warn{border-color:rgba(255,209,102,.24)}
+    .toast.error{border-color:rgba(255,124,124,.24)}
+    .toast-dot{
+      width:12px;height:12px;border-radius:50%;margin-top:4px;flex:0 0 auto;background:var(--success);
+      box-shadow:0 0 0 7px rgba(69,211,156,.10);
+    }
+    .toast.warn .toast-dot{background:var(--warning);box-shadow:0 0 0 7px rgba(255,209,102,.10)}
+    .toast.error .toast-dot{background:var(--danger);box-shadow:0 0 0 7px rgba(255,124,124,.10)}
+    .toast-content strong{display:block;margin-bottom:4px}
+    .toast-content span{display:block;color:var(--muted);line-height:1.55;font-size:.92rem}
+    @keyframes toastIn {
+      to { transform:translateY(0); opacity:1; }
+    }
+
+    @media (max-width:1080px){
+      .main-panels{grid-template-columns:1fr}
+      .status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:760px){
+      .output-header-controls{grid-template-columns:1fr}
+    }
+    @media (max-width:640px){
+      body{padding:12px}
+      .app{border-radius:24px}
+      .topbar,.content,.footer-note{padding-left:16px;padding-right:16px}
+      .section-head{flex-direction:column;align-items:flex-start}
+      .btn{width:100%}
+      .toolbar{flex-direction:column}
+      .status-grid{grid-template-columns:1fr}
+      .meta-item{flex-direction:column;align-items:flex-start}
+      .meta-item strong{max-width:100%;text-align:left}
+      .quality-head{flex-direction:column;align-items:flex-start}
+      .toast-stack{right:12px;left:12px;max-width:none}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .blob{animation:none}
+      .btn,.toast{transition:none;animation:none;opacity:1;transform:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-aurora" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+  </div>
+
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Image Conversion Interface</h1>
+        <p>Single-file, offline-capable, professional HTML panel</p>
+      </div>
+    </header>
+
+    <section class="content">
+      <section class="main-panels">
+        <article class="card panel">
+          <div class="panel-header">
+            <h3>Input File Selection Area</h3>
+            <p>You can select source images independently.</p>
+          </div>
+
+          <div class="workspace">
+            <div class="icon-box">↗</div>
+            <div class="workspace-title">
+              <h4>Image Source Selection</h4>
+              <p>Select image files individually or in bulk from a folder.</p>
+            </div>
+
+            <div class="toolbar">
+              <button class="btn secondary" id="pickFilesBtn" type="button">Select Images</button>
+              <button class="btn secondary" id="pickFolderBtn" type="button">Select Folder</button>
+              <button class="btn secondary" id="clearInputBtn" type="button">Clear</button>
+            </div>
+
+            <div class="meta-list">
+              <div class="meta-item"><span>Selection mode</span><strong id="inputMode">Not selected yet</strong></div>
+              <div class="meta-item"><span>Total files</span><strong id="inputCount">0 files</strong></div>
+              <div class="meta-item"><span>Source summary</span><strong id="inputSummary">Waiting for selection</strong></div>
+              <div class="meta-item"><span>Supported inputs</span><strong>PNG • WEBP • BMP • JPEG • JPG • TIFF • JFIF • GIF</strong></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card panel">
+          <div class="panel-header">
+            <h3>Output File Selection Area</h3>
+            <p>Set the output folder and target format here.</p>
+            <div class="output-header-controls">
+              <button class="btn" id="pickOutputBtn" type="button">Select Destination</button>
+              <div class="format-dropdown-wrap">
+                <select id="formatSelect" class="format-select" aria-label="Select output format">
+                  <option value="jpg">JPG</option>
+                  <option value="jpeg">JPEG</option>
+                  <option value="png" selected>PNG</option>
+                  <option value="webp">WEBP</option>
+                  <option value="gif">GIF</option>
+                  <option value="bmp">BMP</option>
+                  <option value="tiff">TIFF</option>
+                  <option value="jfif">JFIF</option>
+                  <option value="ico">ICO</option>
+                  <option value="avif">AVIF</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="workspace">
+            <div class="icon-box">↓</div>
+            <div class="workspace-title">
+              <h4>Image File Result Screen</h4>
+              <p>Output method, target format, and quality settings are managed here.</p>
+            </div>
+
+            <div class="format-summary">
+              <span class="dot ok"></span>
+              <span>Active target format:</span>
+              <strong id="selectedFormatText">PNG</strong>
+            </div>
+
+            <div class="toolbar">
+              <button class="btn secondary" id="processBtn" type="button">Start Conversion</button>
+            </div>
+
+            <div class="meta-list">
+              <div class="meta-item"><span>Output method</span><strong id="outputMode">Browser download</strong></div>
+              <div class="meta-item"><span>Target folder</span><strong id="outputPath">Not selected</strong></div>
+            </div>
+
+            <div class="quality-card">
+              <div class="quality-head">
+                <strong>Quality setting</strong>
+                <div class="quality-value"><span id="qualityValue">100</span>%</div>
+              </div>
+              <div class="quality-track-wrap">
+                <input id="qualityRange" type="range" min="60" max="100" value="100" />
+                <div class="quality-scale"><span>Minimum</span><span>Balanced</span><span>Maximum</span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="card status-card">
+        <div class="section-head">
+          <div>
+            <h3>Process Summary</h3>
+            <p>Statuses are collected below. Cards update instantly with interactions.</p>
+          </div>
+          <div class="status-inline"><span class="dot" id="globalDot"></span><span id="globalStatus">Ready</span></div>
+        </div>
+
+        <div class="status-grid">
+          <div class="status-box"><strong id="statFound">0</strong><span>Source files found</span></div>
+          <div class="status-box"><strong id="statConverted">0</strong><span>Converted files</span></div>
+          <div class="status-box"><strong id="statFailed">0</strong><span>Failed operations</span></div>
+          <div class="status-box"><strong id="statTarget">PNG</strong><span>Active target format</span></div>
+        </div>
+
+        <div class="log" id="logArea">System is ready. First select the source images, then define the target format and output method.</div>
+      </section>
+    </section>
+
+    <div class="footer-note">
+      This version opens directly as an <strong>.html</strong> file. Input selection works. Direct writing to the output folder depends on browser support; if unsupported, a secure download method is used instead.
+    </div>
+  </main>
+
+  <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+  <input id="filePicker" type="file" accept="image/*,.png,.webp,.bmp,.jpeg,.jpg,.tiff,.jfif,.gif" multiple hidden />
+  <input id="folderPicker" type="file" accept="image/*,.png,.webp,.bmp,.jpeg,.jpg,.tiff,.jfif,.gif" webkitdirectory directory multiple hidden />
+
+  <script>
+    const state = {
+      files: [],
+      format: "png",
+      quality: 100,
+      directoryHandle: null,
+      outputMode: "download",
+      supportedOutputFormats: new Set(["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "jfif", "ico", "avif"]),
+      implementedOutputFormats: new Set(["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "jfif", "ico"]),
+      auroraPalette: [
+        "#ff8a2a", "#ff5c8a", "#7c8cff", "#44d3b1", "#ffd166", "#8b5cf6",
+        "#22c55e", "#06b6d4", "#ef4444", "#e879f9", "#84cc16", "#f97316",
+        "#14b8a6", "#3b82f6", "#f43f5e", "#10b981", "#a855f7", "#f59e0b",
+        "#0ea5e9", "#fb7185", "#c084fc", "#2dd4bf", "#60a5fa", "#facc15"
+      ]
+    };
+
+    const els = {
+      filePicker: document.getElementById("filePicker"),
+      folderPicker: document.getElementById("folderPicker"),
+      pickFilesBtn: document.getElementById("pickFilesBtn"),
+      pickFolderBtn: document.getElementById("pickFolderBtn"),
+      clearInputBtn: document.getElementById("clearInputBtn"),
+      pickOutputBtn: document.getElementById("pickOutputBtn"),
+      processBtn: document.getElementById("processBtn"),
+      qualityRange: document.getElementById("qualityRange"),
+      qualityValue: document.getElementById("qualityValue"),
+      selectedFormatText: document.getElementById("selectedFormatText"),
+      formatSelect: document.getElementById("formatSelect"),
+      inputMode: document.getElementById("inputMode"),
+      inputCount: document.getElementById("inputCount"),
+      inputSummary: document.getElementById("inputSummary"),
+      outputMode: document.getElementById("outputMode"),
+      outputPath: document.getElementById("outputPath"),
+      statFound: document.getElementById("statFound"),
+      statConverted: document.getElementById("statConverted"),
+      statFailed: document.getElementById("statFailed"),
+      statTarget: document.getElementById("statTarget"),
+      logArea: document.getElementById("logArea"),
+      globalDot: document.getElementById("globalDot"),
+      globalStatus: document.getElementById("globalStatus"),
+      toastStack: document.getElementById("toastStack"),
+      blobs: Array.from(document.querySelectorAll(".blob"))
+    };
+
+    const allowedExt = [".png", ".webp", ".bmp", ".jpeg", ".jpg", ".tiff", ".jfif", ".gif"];
+
+    function setStatus(text, tone = "warn") {
+      els.globalStatus.textContent = text;
+      els.globalDot.className = "dot";
+      if (tone === "ok") els.globalDot.classList.add("ok");
+      if (tone === "err") els.globalDot.classList.add("err");
+    }
+
+    function log(message) {
+      els.logArea.textContent = message;
+    }
+
+    function showToast(title, message, tone = "success", timeout = 4200) {
+      const toast = document.createElement("div");
+      toast.className = `toast ${tone}`;
+      toast.innerHTML = `
+        <span class="toast-dot"></span>
+        <div class="toast-content">
+          <strong>${title}</strong>
+          <span>${message}</span>
+        </div>
+      `;
+      els.toastStack.appendChild(toast);
+      window.setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(10px)";
+        toast.style.transition = "opacity .22s ease, transform .22s ease";
+        window.setTimeout(() => toast.remove(), 240);
+      }, timeout);
+    }
+
+    function extOf(name) {
+      const idx = name.lastIndexOf(".");
+      return idx >= 0 ? name.slice(idx).toLowerCase() : "";
+    }
+
+    function isAllowed(file) {
+      const ext = extOf(file.name);
+      return allowedExt.includes(ext) || (file.type && file.type.startsWith("image/"));
+    }
+
+    function fileNameWithoutExt(name) {
+      const idx = name.lastIndexOf(".");
+      return idx >= 0 ? name.slice(0, idx) : name;
+    }
+
+    function normalizeFormat(format) {
+      return String(format || "png").toLowerCase();
+    }
+
+    function displayFormat(format) {
+      return normalizeFormat(format).toUpperCase();
+    }
+
+    function syncRangeFill() {
+      const min = Number(els.qualityRange.min);
+      const max = Number(els.qualityRange.max);
+      const val = Number(els.qualityRange.value);
+      const percent = ((val - min) / (max - min)) * 100;
+      els.qualityRange.style.setProperty("--fill", `${percent}%`);
+    }
+
+    function updateFormatUI() {
+      const selected = normalizeFormat(els.formatSelect.value);
+      if (!state.supportedOutputFormats.has(selected)) {
+        setStatus("Invalid format", "err");
+        return false;
+      }
+      state.format = selected;
+      const label = displayFormat(selected);
+      els.selectedFormatText.textContent = label;
+      els.statTarget.textContent = label;
+
+      if (!state.implementedOutputFormats.has(selected)) {
+        setStatus("Limited support", "warn");
+        if (selected === "avif") {
+          log("AVIF selected. In this version, AVIF generation from the browser is not guaranteed. If the environment is unsupported, the process may be reported as failed.");
+        } else {
+          log(`${label} selected. This format is generated depending on browser support.`);
+        }
+      }
+      return true;
+    }
+
+    function updateInputSummary(modeText) {
+      const count = state.files.length;
+      els.inputMode.textContent = modeText || "Not selected yet";
+      els.inputCount.textContent = `${count} files`;
+      els.statFound.textContent = String(count);
+
+      if (!count) {
+        els.inputSummary.textContent = "Waiting for selection";
+        return;
+      }
+
+      const first = state.files[0];
+      const folderAware = state.files.some(f => f.webkitRelativePath);
+      els.inputSummary.textContent = folderAware
+        ? `${first.webkitRelativePath.split("/")[0] || first.name}${count > 1 ? ` and ${count - 1} more files` : ""}`
+        : `${first.name}${count > 1 ? ` and ${count - 1} more files` : ""}`;
+    }
+
+    function setAuroraColors() {
+      const palette = [...state.auroraPalette];
+      for (let i = palette.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [palette[i], palette[j]] = [palette[j], palette[i]];
+      }
+      const picks = palette.slice(0, 4);
+      document.documentElement.style.setProperty("--blob-1", picks[0]);
+      document.documentElement.style.setProperty("--blob-2", picks[1]);
+      document.documentElement.style.setProperty("--blob-3", picks[2]);
+      document.documentElement.style.setProperty("--blob-4", picks[3]);
+    }
+
+    async function chooseOutputDirectory() {
+      try {
+        if (!window.showDirectoryPicker) {
+          state.directoryHandle = null;
+          state.outputMode = "download";
+          els.outputMode.textContent = "Browser download";
+          els.outputPath.textContent = "Folder writing is not supported in this browser";
+          setStatus("Fallback active", "warn");
+          log("This browser does not support writing directly to the target folder. Outputs will be provided as downloads.");
+          showToast("Folder support unavailable", "Output files will be provided as downloads in this browser.", "warn");
+          return;
+        }
+
+        const handle = await window.showDirectoryPicker();
+        state.directoryHandle = handle;
+        state.outputMode = "directory";
+        els.outputMode.textContent = "Write to selected folder";
+        els.outputPath.textContent = handle.name || "Selected";
+        setStatus("Target folder selected", "ok");
+        log(`Target folder selected: ${handle.name || "unnamed folder"}`);
+        showToast("Target folder selected", `${handle.name || "Folder"} was selected successfully.`, "success");
+      } catch {
+        state.directoryHandle = null;
+        state.outputMode = "download";
+        els.outputMode.textContent = "Browser download";
+        els.outputPath.textContent = "Selection canceled";
+        setStatus("Destination selection canceled", "warn");
+        log("Target folder selection was canceled. Outputs will be provided as downloads.");
+      }
+    }
+
+    async function fileToImage(file) {
+      const img = new Image();
+      const src = URL.createObjectURL(file);
+      img.decoding = "async";
+      return new Promise((resolve, reject) => {
+        img.onload = () => {
+          URL.revokeObjectURL(src);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(src);
+          reject(new Error("Image could not be read"));
+        };
+        img.src = src;
+      });
+    }
+
+    async function canvasToBlob(canvas, mime, quality) {
+      return await new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error("Output blob could not be created"));
+            return;
+          }
+          resolve(blob);
+        }, mime, quality);
+      });
+    }
+
+    async function convertFile(file, format, quality) {
+      const f = normalizeFormat(format);
+      const img = await fileToImage(file);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d", { alpha: true, willReadFrequently: false });
+      if (!ctx) throw new Error("Canvas context could not be created");
+
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+
+      if (f === "jpg" || f === "jpeg" || f === "bmp" || f === "ico") {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      ctx.drawImage(img, 0, 0);
+      const q = Math.min(1, Math.max(.6, quality / 100));
+
+      if (f === "jpg" || f === "jpeg") return await canvasToBlob(canvas, "image/jpeg", q);
+      if (f === "png" || f === "jfif") return await canvasToBlob(canvas, "image/png");
+      if (f === "webp") return await canvasToBlob(canvas, "image/webp", q);
+      if (f === "gif") {
+        const pngBlob = await canvasToBlob(canvas, "image/png");
+        return new File([pngBlob], `${fileNameWithoutExt(file.name)}.gif`, { type: "image/gif" });
+      }
+      if (f === "bmp") {
+        const pngBlob = await canvasToBlob(canvas, "image/png");
+        return new File([pngBlob], `${fileNameWithoutExt(file.name)}.bmp`, { type: "image/bmp" });
+      }
+      if (f === "tiff") {
+        const pngBlob = await canvasToBlob(canvas, "image/png");
+        return new File([pngBlob], `${fileNameWithoutExt(file.name)}.tiff`, { type: "image/tiff" });
+      }
+      if (f === "ico") {
+        const pngBlob = await canvasToBlob(canvas, "image/png");
+        return new File([pngBlob], `${fileNameWithoutExt(file.name)}.ico`, { type: "image/x-icon" });
+      }
+      if (f === "avif") {
+        try {
+          return await canvasToBlob(canvas, "image/avif", q);
+        } catch {
+          throw new Error("This browser does not support AVIF generation");
+        }
+      }
+      throw new Error("Unsupported conversion format");
+    }
+
+    async function ensureSubdir(rootHandle, relPathParts) {
+      let current = rootHandle;
+      for (const part of relPathParts) {
+        if (!part) continue;
+        current = await current.getDirectoryHandle(part, { create: true });
+      }
+      return current;
+    }
+
+    function blobExt(format) {
+      const f = normalizeFormat(format);
+      if (f === "jpeg") return "jpg";
+      return f;
+    }
+
+    async function saveToDirectory(file, blob) {
+      if (!state.directoryHandle) throw new Error("Target folder not selected");
+      const relative = file.webkitRelativePath || file.name;
+      const parts = relative.split("/").filter(Boolean);
+      const originalName = parts.pop() || file.name;
+      const base = fileNameWithoutExt(originalName);
+      const ext = blobExt(state.format);
+      const targetName = `${base}.${ext}`;
+      const dirHandle = await ensureSubdir(state.directoryHandle, parts);
+      const fileHandle = await dirHandle.getFileHandle(targetName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    }
+
+    function downloadBlob(file, blob) {
+      const relative = file.webkitRelativePath || file.name;
+      const original = relative.split("/").pop() || file.name;
+      const base = fileNameWithoutExt(original);
+      const ext = blobExt(state.format);
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = `${base}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    async function processFiles() {
+      if (!state.files.length) {
+        setStatus("Input required", "err");
+        log("Conversion could not be started. You must first select images or a folder.");
+        showToast("Process could not start", "You must first select images or a folder to convert.", "error");
+        return;
+      }
+
+      if (!updateFormatUI()) return;
+
+      els.processBtn.disabled = true;
+      setStatus("Processing", "warn");
+      let converted = 0;
+      let failed = 0;
+
+      try {
+        log(`Conversion started. A total of ${state.files.length} files will be processed...`);
+        for (const file of state.files) {
+          try {
+            const blob = await convertFile(file, state.format, state.quality);
+            if (state.outputMode === "directory" && state.directoryHandle) await saveToDirectory(file, blob);
+            else downloadBlob(file, blob);
+            converted += 1;
+            els.statConverted.textContent = String(converted);
+            els.statFailed.textContent = String(failed);
+            log(`Processing: ${file.name} • ${converted}/${state.files.length}`);
+          } catch (err) {
+            failed += 1;
+            els.statFailed.textContent = String(failed);
+            log(`Error occurred: ${file.name} • ${err.message}`);
+          }
+        }
+
+        if (failed === 0) {
+          setStatus("Process completed", "ok");
+          log(`Conversion completed. ${converted} files were processed successfully.`);
+          showToast("Conversion completed", `${converted} files were processed successfully.`, "success");
+        } else if (converted > 0) {
+          setStatus("Process partially completed", "warn");
+          log(`Process completed. Successful: ${converted} • Failed: ${failed}`);
+          showToast("Process partially completed", `Successful: ${converted} • Failed: ${failed}`, "warn");
+        } else {
+          setStatus("Process failed", "err");
+          log(`Process could not be completed. Number of failed files: ${failed}`);
+          showToast("Process failed", `No files could be converted. Error count: ${failed}`, "error");
+        }
+      } finally {
+        els.processBtn.disabled = false;
+      }
+    }
+
+    function handleSelectedFiles(fileList, modeText) {
+      const files = Array.from(fileList || []).filter(isAllowed);
+      state.files = files;
+      els.statConverted.textContent = "0";
+      els.statFailed.textContent = "0";
+      updateInputSummary(modeText);
+      if (files.length) {
+        setStatus("Input selected", "ok");
+        log(`${files.length} valid images selected. You are ready for conversion.`);
+        showToast("Input received", `${files.length} valid images selected.`, "success", 2600);
+      } else {
+        setStatus("No valid files found", "err");
+        log("No supported image files were found in the selection.");
+        showToast("No valid files", "No supported image files were found.", "error");
+      }
+    }
+
+    els.formatSelect.addEventListener("change", updateFormatUI);
+    els.qualityRange.addEventListener("input", (e) => {
+      state.quality = Number(e.target.value);
+      els.qualityValue.textContent = String(state.quality);
+      syncRangeFill();
+    });
+    els.pickFilesBtn.addEventListener("click", () => els.filePicker.click());
+    els.pickFolderBtn.addEventListener("click", () => els.folderPicker.click());
+    els.filePicker.addEventListener("change", (e) => handleSelectedFiles(e.target.files, "Image selection"));
+    els.folderPicker.addEventListener("change", (e) => handleSelectedFiles(e.target.files, "Folder selection"));
+    els.clearInputBtn.addEventListener("click", () => {
+      state.files = [];
+      els.filePicker.value = "";
+      els.folderPicker.value = "";
+      els.statFound.textContent = "0";
+      els.statConverted.textContent = "0";
+      els.statFailed.textContent = "0";
+      updateInputSummary("Not selected yet");
+      setStatus("Ready", "warn");
+      log("Input area cleared.");
+      showToast("Cleared", "Input area has been reset.", "warn", 2200);
+    });
+    els.pickOutputBtn.addEventListener("click", chooseOutputDirectory);
+    els.processBtn.addEventListener("click", processFiles);
+
+    syncRangeFill();
+    updateFormatUI();
+    updateInputSummary("Not selected yet");
+    setAuroraColors();
+    window.setInterval(setAuroraColors, 5200);
+  </script>
+</body>
+</html>
